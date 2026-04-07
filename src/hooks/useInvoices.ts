@@ -17,7 +17,9 @@ function load(): SavedInvoice[] {
 export function useInvoices() {
   const [list, setList] = useState<SavedInvoice[]>([]);
 
+  /* localStorage dopiero po montażu — unikamy rozjazdu SSR/hydracji z pierwszym odczytem z dysku */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync stanu z localStorage po mount
     setList(load());
   }, []);
 

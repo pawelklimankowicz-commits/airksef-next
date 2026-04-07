@@ -62,6 +62,7 @@ export function GeneratorWizard() {
   useEffect(() => {
     const p = loadBuyerProfile();
     if (!p) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- profil nabywcy z localStorage po mount
     if (p.buyerNip) setBuyerNip(p.buyerNip);
     if (p.buyerName) setBuyerName(p.buyerName);
     if (p.buyerAddress) setBuyerAddress(p.buyerAddress);
@@ -143,11 +144,6 @@ export function GeneratorWizard() {
     const v = validateInvoiceXml(xml);
     setValMsg(v.valid ? [] : v.errors);
   }, [invoice]);
-
-  useEffect(() => {
-    if (step !== 3) return;
-    runGenerate();
-  }, [step, runGenerate]);
 
   function downloadXml() {
     if (!xmlOut) return;
@@ -233,6 +229,7 @@ export function GeneratorWizard() {
     setStepErrors([]);
     persistBuyer();
     setStep(3);
+    runGenerate();
   }
 
   return (
