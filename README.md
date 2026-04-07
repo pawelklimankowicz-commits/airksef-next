@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AIRKSEF — produkcja (Next.js)
 
-## Getting Started
+Generator plików XML **FA (3)** dla faktur z platform zagranicznych, z kontem użytkownika, limitami planów i płatnościami **Stripe**.
 
-First, run the development server:
+## Wymagania
+
+- Node.js 20+
+- Konto [Clerk](https://clerk.com), [Stripe](https://stripe.com), baza **PostgreSQL** (np. Neon, Supabase, Railway)
+
+## Konfiguracja
+
+1. Skopiuj `.env.example` → `.env.local` i uzupełnij zmienne.
+2. W Clerk ustaw adresy aplikacji (np. `http://localhost:3000` i produkcyjny URL).
+3. W Stripe utwórz produkty **Pro** i **Business** (subskrypcja miesięczna), skopiuj **Price ID** do `STRIPE_PRO_PRICE_ID` i `STRIPE_BUSINESS_PRICE_ID`.
+4. Uruchom webhook Stripe na URL: `https://twoja-domena/api/webhooks/stripe` (zdarzenia: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`) i wklej sekret do `STRIPE_WEBHOOK_SECRET`.
+
+## Baza danych
+
+```bash
+npm install
+npx prisma db push
+```
+
+Na produkcji preferuj `prisma migrate deploy` po dodaniu migracji.
+
+## Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Otwórz [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build && npm start
+```
 
-## Learn More
+## Limity planów
 
-To learn more about Next.js, take a look at the following resources:
+Zdefiniowane w `src/lib/plan-limits.ts` (Free: 1, Pro: 50, Business: bez limitu — miesięcznie). Przekroczenie przy zapisie faktury przekierowuje na `/billing`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Struktura
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Ścieżka | Opis |
+|---------|------|
+| `/` | Landing |
+| `/generator` | Kreator XML — **pełny plik FA powstaje na serwerze**; gość dostaje tylko wynik walidacji (bez treści XML w odpowiedzi); podgląd i pobranie po zalogowaniu (`generateInvoiceXmlAction`) |
+| `/invoices` | Zapisane faktury (wymaga konta) |
+| `/billing` | Stripe Checkout / portal klienta |
+| `/dashboard` | Podsumowanie planu |
 
-## Deploy on Vercel
+## Deploy (np. Vercel)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Podłącz repozytorium, ustaw zmienne środowiskowe z `.env.example`.
+2. `DATABASE_URL` musi wskazywać na Postgres w internecie.
+3. Zaktualizuj `NEXT_PUBLIC_APP_URL` na URL produkcyjny.
+4. Po deployu zaktualizuj URL webhooka w Stripe.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Narzędzie nie wysyła samo plików do API KSeF — przygotowuje XML zgodnie z wprowadzonymi danymi; użytkownik odpowiada za zgodność z przepisami i aktualnym schematem.

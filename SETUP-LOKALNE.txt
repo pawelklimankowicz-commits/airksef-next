@@ -1,0 +1,31 @@
+AIRKSEF — co już jest zrobione w plikach (Ty tylko odpalasz komendy)
+=======================================================================
+
+1) PLIK .env.local
+   - Jest UZUPEŁNIONY w folderze airksef-next:
+     * Clerk (Twoje klucze)
+     * DATABASE_URL pod lokalnego Postgresa w Dockerze (stały adres)
+     * NEXT_PUBLIC_APP_URL
+   - Stripe: puste pola — dopisz klucze w Stripe Dashboard gdy będziesz chciał płatności.
+
+2) BAZA DANYCH (PostgreSQL w Dockerze)
+   a) Zainstaluj i URUCHOM Docker Desktop (ikona w pasku musi być „running”).
+   b) W terminalu:
+        cd ~/Desktop/airksef-next
+        npm run db:setup
+      (to robi: docker compose up -d  oraz  prisma db push)
+
+   Jeśli nie chcesz Dockera: załóż darmową bazę na neon.tech, skopiuj connection string i
+   ZAMIEŃ w .env.local jedną linię DATABASE_URL= na ten z Neon.
+
+3) URUCHOMIENIE APLIKACJI
+        cd ~/Desktop/airksef-next
+        npm run dev
+   Przeglądarka: http://localhost:3000
+
+4) CLERK
+   W panelu Clerk dodaj adres: http://localhost:3000 (Allowed / Redirect URLs — zależnie od widoku).
+
+5) PRZYDATNE KOMENDY
+   npm run db:studio   — podgląd tabel w przeglądarce
+   npm run db:down     — zatrzymanie kontenera Postgres (Docker)

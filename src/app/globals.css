@@ -1,26 +1,105 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand — spójny z landingiem (#f58220) i przyciskami ze screenów */
+  --airksef-brand: #f58220;
+  /* Jasna aplikacja: kremowe tło, białe karty, pomarańczowy akcent (bez granatu) */
+  --background: #faf9f6;
+  --foreground: #111827;
+  --card: #ffffff;
+  --card-foreground: #111827;
+  --primary: #f58220;
+  --primary-foreground: #ffffff;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+  --destructive: hsl(0 72% 51%);
+  --destructive-foreground: #ffffff;
+  --border: #e5e7eb;
+  --input: #e5e7eb;
+  --ring: #f58220;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --font-sans: "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --color-airksef: var(--airksef-brand);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
+  min-height: 100vh;
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "General Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 100% 70% at 50% -25%, hsl(28 95% 55% / 0.07), transparent 55%),
+    var(--background);
+}
+
+/* Landing — wymuszony pomarańcz (nadpisuje body i ewentualne motywy przeglądarki) */
+html:has(.landing-root) {
+  background-color: var(--airksef-brand) !important;
+  color-scheme: light;
+}
+html:has(.landing-root) body {
+  background-color: var(--airksef-brand) !important;
+  color: #fff !important;
+}
+html:has(.landing-root) body::before {
+  display: none !important;
+  content: none !important;
+  background: none !important;
+}
+
+/* Pas Clerk na stronie głównej — nie szary, tylko jasny na pomarańczu */
+html:has(.landing-root) .clerk-setup-banner {
+  background-color: rgba(255, 255, 255, 0.14) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+html:has(.landing-root) .clerk-setup-banner a {
+  color: #fff !important;
+}
+html:has(.landing-root) .clerk-setup-banner code {
+  background-color: rgba(0, 0, 0, 0.15) !important;
+  color: #fff !important;
+}
+
+/* Clerk: ukryj SSO Apple (Google + e-mail/hasło zostają). Zapas gdy klucze `appearance.elements` się zmienią. */
+[class*="cl-socialButtonsBlockButton__oauth_apple"],
+[class*="cl-socialButtonsIconButton__oauth_apple"],
+.cl-rootBox button[aria-label*="Apple"] {
+  display: none !important;
 }
