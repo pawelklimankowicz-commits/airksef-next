@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "npm run build && playwright test",
+    "test:e2e:remote": "playwright test",
     "verify": "npm run lint && npm run test && npm run build && playwright test",
     "postinstall": "prisma generate",
     "db:up": "docker compose up -d",

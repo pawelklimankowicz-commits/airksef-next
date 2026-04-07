@@ -27,8 +27,8 @@ const FEATURES = [
   },
   {
     icon: Send,
-    title: "Wysyłka do KSeF",
-    text: "Strona /ksef i zmienne środowiskowe — podłącz własny endpoint lub tryb testowy. Pełna integracja MF wymaga certyfikatu.",
+    title: "Ścieżka pod KSeF",
+    text: "Strona /ksef: tryb symulacji lub własny endpoint (KSEF_SUBMIT_URL). Pełna integracja z API MF wymaga certyfikatu i konfiguracji po Twojej stronie.",
   },
 ];
 
@@ -98,11 +98,11 @@ export function LandingPage() {
           </div>
 
           <h1 className="text-balance text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
-            Faktury zagraniczne? Załatwiamy KSeF za Ciebie
+            Faktury zagraniczne? Przygotuj plik XML pod KSeF
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-base text-white/95 sm:text-lg">
-            Dostajesz faktury od Uber, Airbnb, Bolt czy Booking? Wrzuć je do nas – przygotujemy plik, który wyślesz do Urzędu
-            Skarbowego. Bez księgowego, bez stresu.
+            Dostajesz faktury od Uber, Airbnb, Bolt czy Booking? Wprowadź dane lub wgraj PDF z warstwą tekstową — wygenerujesz
+            plik FA (3) do dalszej weryfikacji i wysyłki do urzędu. Ty odpowiadasz za poprawność danych i zgodność z przepisami.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -138,7 +138,7 @@ export function LandingPage() {
       <section id="funkcje" className="border-t border-white/10 px-4 py-20">
         <div className="mx-auto max-w-7xl">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/80">Funkcje</p>
-          <h2 className="mt-2 text-center text-2xl font-bold sm:text-3xl">Wszystko czego potrzebujesz do KSeF</h2>
+          <h2 className="mt-2 text-center text-2xl font-bold sm:text-3xl">Narzędzia pod przygotowanie pliku do KSeF</h2>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div
@@ -198,8 +198,8 @@ export function LandingPage() {
               <ul className="mt-6 flex flex-1 flex-col gap-3 text-sm">
                 {[
                   "Do 50 faktur / miesiąc",
-                  "AI OCR z PDF",
-                  "Wysyłka do KSeF",
+                  "Podpowiedzi z tekstu PDF (nie skany OCR)",
+                  "Przygotowanie XML pod KSeF",
                   "Archiwum faktur",
                   "Wsparcie e-mail",
                 ].map((t) => (
@@ -223,10 +223,10 @@ export function LandingPage() {
               <p className="mt-4 text-3xl font-bold">99 PLN / mc</p>
               <ul className="mt-6 flex flex-1 flex-col gap-3 text-sm">
                 {[
-                  "Faktury bez limitu",
+                  "Faktury bez limitu (wg planu)",
                   "Wszystko z Pro",
-                  "Dostęp API",
-                  "Wielu użytkowników",
+                  "Wyższe potrzeby rozliczeniowe",
+                  "Priorytet w rozwoju funkcji",
                   "Wsparcie priorytetowe",
                 ].map((t) => (
                   <li key={t} className="flex items-start gap-2">

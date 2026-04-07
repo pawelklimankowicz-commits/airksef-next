@@ -51,15 +51,26 @@ Zdefiniowane w `src/lib/plan-limits.ts` (Free: 1, Pro: 50, Business: bez limitu 
 |---------|------|
 | `/` | Landing |
 | `/generator` | Kreator XML — **pełny plik FA powstaje na serwerze**; gość dostaje tylko wynik walidacji (bez treści XML w odpowiedzi); podgląd i pobranie po zalogowaniu (`generateInvoiceXmlAction`) |
-| `/invoices` | Zapisane faktury (wymaga konta) |
+| `/faktury` | Zapisane faktury (wymaga konta) |
 | `/billing` | Stripe Checkout / portal klienta |
 | `/dashboard` | Podsumowanie planu |
 
 ## Deploy (np. Vercel)
 
-1. Podłącz repozytorium, ustaw zmienne środowiskowe z `.env.example`.
-2. `DATABASE_URL` musi wskazywać na Postgres w internecie.
-3. Zaktualizuj `NEXT_PUBLIC_APP_URL` na URL produkcyjny.
-4. Po deployu zaktualizuj URL webhooka w Stripe.
+**Pełna checklista produkcyjna:** zobacz **[PRODUCTION.md](./PRODUCTION.md)** (Clerk/Stripe Live, webhook, testy na URL, RODO).
 
-Narzędzie nie wysyła samo plików do API KSeF — przygotowuje XML zgodnie z wprowadzonymi danymi; użytkownik odpowiada za zgodność z przepisami i aktualnym schematem.
+Skrót:
+
+1. Podłącz repozytorium, ustaw zmienne środowiskowe z `.env.example` (dla produkcji — klucze **live**).
+2. `DATABASE_URL` musi wskazywać na Postgres w internecie.
+3. Zaktualizuj `NEXT_PUBLIC_APP_URL` na URL produkcyjny i wykonaj **redeploy** po zmianach `NEXT_PUBLIC_*`.
+4. Po deployu ustaw URL webhooka Stripe na `https://twoja-domena/api/webhooks/stripe`.
+5. Opcjonalnie: `NEXT_PUBLIC_CONTACT_EMAIL` — adres w regulaminie i polityce prywatności.
+
+**Testy smoke na wdrożonym URL** (bez lokalnego serwera):
+
+```bash
+PLAYWRIGHT_BASE_URL=https://twoja-domena.pl npm run test:e2e:remote
+```
+
+Narzędzie **przygotowuje pliki XML** (FA) zgodnie z wprowadzonymi danymi; **automatyczna wysyłka do API Ministerstwa Finansów** wymaga własnej integracji (endpoint, certyfikaty) — patrz `/ksef`. Użytkownik odpowiada za zgodność z przepisami i aktualnym schematem.

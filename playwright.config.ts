@@ -5,10 +5,17 @@ const E2E_PORT = 3005;
 const E2E_ORIGIN = `http://127.0.0.1:${E2E_PORT}`;
 
 /**
- * Testy E2E (smoke): uruchamiają się przeciwko serwerowi Next.
+ * Zdalny smoke test produkcji / staging:
+ *   PLAYWRIGHT_BASE_URL=https://twoja-domena.pl npm run test:e2e:remote
+ * (nie startuje `next start` lokalnie)
+ */
+const remoteBase = process.env.PLAYWRIGHT_BASE_URL?.trim();
+const useRemote = !!remoteBase && /^https?:\/\//i.test(remoteBase);
+
+/**
+ * Testy E2E (smoke): lokalnie — build + `next start` na porcie 3005.
  * Pierwszy raz: `npx playwright install chromium`
- * Samo E2E: `npm run test:e2e` — build + `next start` na porcie 3005 (nie używa drugiego `next dev`).
- * Pełna weryfikacja: `npm run verify` (eslint + vitest + build + e2e).
+ * Pełna weryfikacja: `npm run verify`
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -17,20 +24,23 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   timeout: 60_000,
-  expect: { timeout: 15_000 },
+  expect: { timeout: 20_000 },
   use: {
-    baseURL: E2E_ORIGIN,
+    baseURL: useRemote ? remoteBase : E2E_ORIGIN,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  // Tylko `next start` — drugi `next dev` w tym samym folderze jest blokowany przez Next 16.
-  webServer: {
-    command: `PORT=${E2E_PORT} npm run start`,
-    url: E2E_ORIGIN,
-    reuseExistingServer: false,
-    timeout: 180_000,
-    stdout: "pipe",
-    stderr: "pipe",
-  },
+  ...(!useRemote
+    ? {
+        webServer: {
+          command: `PORT=${E2E_PORT} npm run start`,
+          url: E2E_ORIGIN,
+          reuseExistingServer: false,
+          timeout: 180_000,
+          stdout: "pipe",
+          stderr: "pipe",
+        },
+      }
+    : {}),
 });
