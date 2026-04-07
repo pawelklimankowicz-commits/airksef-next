@@ -14,7 +14,9 @@
     "db:down": "docker compose down",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:setup": "npm run db:up && npx prisma db push"
+    "db:setup": "npm run db:up && npx prisma db push",
+    "stripe:bootstrap": "node scripts/stripe-bootstrap.mjs",
+    "gen:uber-sample": "npx tsx scripts/gen-uber-sample.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.8",

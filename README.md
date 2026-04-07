@@ -11,8 +11,12 @@ Generator plików XML **FA (3)** dla faktur z platform zagranicznych, z kontem u
 
 1. Skopiuj `.env.example` → `.env.local` i uzupełnij zmienne.
 2. W Clerk ustaw adresy aplikacji (np. `http://localhost:3000` i produkcyjny URL).
-3. W Stripe utwórz produkty **Pro** i **Business** (subskrypcja miesięczna), skopiuj **Price ID** do `STRIPE_PRO_PRICE_ID` i `STRIPE_BUSINESS_PRICE_ID`.
-4. Uruchom webhook Stripe na URL: `https://twoja-domena/api/webhooks/stripe` (zdarzenia: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`) i wklej sekret do `STRIPE_WEBHOOK_SECRET`.
+3. **Stripe — produkty i ceny (automatycznie):** w `.env.local` ustaw tylko `STRIPE_SECRET_KEY` z [API keys](https://dashboard.stripe.com/apikeys) (tryb Test na start). Potem w katalogu projektu:
+   ```bash
+   npm run stripe:bootstrap
+   ```
+   Skrypt utworzy w Stripe produkty **AIRKSEF Pro** i **AIRKSEF Business** (subskrypcja miesięczna, PLN) i wypisze wartości `STRIPE_PRO_PRICE_ID` oraz `STRIPE_BUSINESS_PRICE_ID` — wklej je do `.env.local`. Kwoty domyślne: 49 i 99 PLN; opcjonalnie: `STRIPE_BOOTSTRAP_PRO_PLN=39` itd. przed uruchomieniem.
+4. **Webhook:** w Stripe → Webhooks dodaj endpoint `https://twoja-domena/api/webhooks/stripe` i zdarzenia: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Wklej **Signing secret** do `STRIPE_WEBHOOK_SECRET`. Lokalnie: `stripe listen --forward-to localhost:3000/api/webhooks/stripe` i użyj wypisanego `whsec_...`.
 
 ## Baza danych
 
