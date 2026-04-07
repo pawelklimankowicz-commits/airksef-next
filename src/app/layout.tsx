@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono } from "next/font/google";
 
 import { ClerkSetupBanner } from "@/components/clerk-setup-banner";
-import { isClerkConfigured } from "@/lib/clerk-config";
+import { getClerkPublishableKeyNormalized, isClerkConfigured } from "@/lib/clerk-config";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
 import "./globals.css";
@@ -42,7 +42,13 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full font-sans antialiased">
-        {clerkOk ? <ClerkProvider appearance={clerkAppearance}>{shell}</ClerkProvider> : shell}
+        {clerkOk ? (
+          <ClerkProvider appearance={clerkAppearance} publishableKey={getClerkPublishableKeyNormalized()}>
+            {shell}
+          </ClerkProvider>
+        ) : (
+          shell
+        )}
       </body>
     </html>
   );

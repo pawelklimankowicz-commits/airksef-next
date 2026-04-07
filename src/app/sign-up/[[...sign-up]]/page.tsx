@@ -19,6 +19,8 @@ export default function SignUpPage() {
     <div className="flex min-h-[60vh] items-center justify-center px-4 py-12">
       <SignUp
         appearance={clerkAppearance}
+        routing="path"
+        path="/sign-up"
         signInUrl="/sign-in"
         fallbackRedirectUrl="/dashboard"
       />

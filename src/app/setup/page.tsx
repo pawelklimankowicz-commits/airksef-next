@@ -30,7 +30,9 @@ export default function SetupPage() {
             dashboard.clerk.com
           </a>
           , skopiuj klucze do{" "}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">.env.local</code>:
+          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">.env.local</code>{" "}
+          (lokalnie) lub do zmiennych środowiskowych na hostingu (np. Vercel → Environment Variables — po zmianie{" "}
+          <code className="rounded bg-muted px-1 font-mono text-xs">NEXT_PUBLIC_*</code> wymagany jest nowy deploy):
         </p>
         <pre className="overflow-x-auto rounded-lg border border-border bg-muted/40 p-4 font-mono text-xs leading-relaxed">
           {`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
