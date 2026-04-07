@@ -6,6 +6,14 @@ describe("findNipInText", () => {
   it("znajduje NIP z myślnikami", () => {
     expect(findNipInText("Nabywca NIP: 525-123-45-67")).toBe("5251234567");
   });
+
+  it("znajduje ciąg 10 cyfr", () => {
+    expect(findNipInText("ID 1234567890 koniec")).toBe("1234567890");
+  });
+
+  it("zwraca undefined gdy brak NIP", () => {
+    expect(findNipInText("brak numeru")).toBeUndefined();
+  });
 });
 
 describe("extractInvoiceHintsFromText", () => {
