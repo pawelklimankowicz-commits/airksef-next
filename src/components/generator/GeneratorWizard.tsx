@@ -23,6 +23,41 @@ const STEPS = ["Klient", "Faktura", "Sprzedawca", "XML"] as const;
 
 const VAT_RATES: VatRate[] = ["23%", "8%", "5%", "0%", "ZW", "NP"];
 
+/** Najpopularniejsze kody krajów UE + najczęstsi partnerzy */
+const COUNTRY_CODES: { code: string; name: string; flag: string }[] = [
+  { code: "DE", name: "Niemcy", flag: "🇩🇪" },
+  { code: "FR", name: "Francja", flag: "🇫🇷" },
+  { code: "NL", name: "Holandia", flag: "🇳🇱" },
+  { code: "GB", name: "Wielka Brytania", flag: "🇬🇧" },
+  { code: "IE", name: "Irlandia", flag: "🇮🇪" },
+  { code: "US", name: "USA", flag: "🇺🇸" },
+  { code: "SE", name: "Szwecja", flag: "🇸🇪" },
+  { code: "NO", name: "Norwegia", flag: "🇳🇴" },
+  { code: "DK", name: "Dania", flag: "🇩🇰" },
+  { code: "FI", name: "Finlandia", flag: "🇫🇮" },
+  { code: "ES", name: "Hiszpania", flag: "🇪🇸" },
+  { code: "IT", name: "Włochy", flag: "🇮🇹" },
+  { code: "AT", name: "Austria", flag: "🇦🇹" },
+  { code: "BE", name: "Belgia", flag: "🇧🇪" },
+  { code: "CH", name: "Szwajcaria", flag: "🇨🇭" },
+  { code: "CZ", name: "Czechy", flag: "🇨🇿" },
+  { code: "SK", name: "Słowacja", flag: "🇸🇰" },
+  { code: "HU", name: "Węgry", flag: "🇭🇺" },
+  { code: "RO", name: "Rumunia", flag: "🇷🇴" },
+  { code: "PT", name: "Portugalia", flag: "🇵🇹" },
+  { code: "LU", name: "Luksemburg", flag: "🇱🇺" },
+  { code: "EE", name: "Estonia", flag: "🇪🇪" },
+  { code: "LV", name: "Łotwa", flag: "🇱🇻" },
+  { code: "LT", name: "Litwa", flag: "🇱🇹" },
+  { code: "CA", name: "Kanada", flag: "🇨🇦" },
+  { code: "AU", name: "Australia", flag: "🇦🇺" },
+  { code: "SG", name: "Singapur", flag: "🇸🇬" },
+  { code: "JP", name: "Japonia", flag: "🇯🇵" },
+  { code: "IL", name: "Izrael", flag: "🇮🇱" },
+  { code: "AE", name: "ZEA", flag: "🇦🇪" },
+  { code: "CN", name: "Chiny", flag: "🇨🇳" },
+];
+
 function todayISODate(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -33,6 +68,12 @@ export function GeneratorWizard() {
   const [step, setStep] = useState(0);
   const [q, setQ] = useState("");
   const [platformIndex, setPlatformIndex] = useState<number | null>(null);
+  const [customMode, setCustomMode] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [customVat, setCustomVat] = useState("");
+  const [customAddress, setCustomAddress] = useState("");
+  const [customCountryCode, setCustomCountryCode] = useState("DE");
+  const [customErrors, setCustomErrors] = useState<string[]>([]);
 
   const [grossStr, setGrossStr] = useState("100.00");
   const [vatRate, setVatRate] = useState<VatRate>("23%");
@@ -83,7 +124,23 @@ export function GeneratorWizard() {
     );
   }, [q]);
 
-  const platform = platformIndex !== null ? PLATFORMS[platformIndex] : null;
+  const platformFromList = platformIndex !== null ? PLATFORMS[platformIndex] : null;
+
+  const customPlatform = useMemo(() => {
+    if (!customMode) return null;
+    const cc = COUNTRY_CODES.find((c) => c.code === customCountryCode);
+    return {
+      name: customName.trim() || "—",
+      vatId: customVat.trim() || "N/A",
+      address: customAddress.trim(),
+      countryCode: customCountryCode,
+      country: cc?.name ?? customCountryCode,
+      flag: cc?.flag ?? "🌍",
+      category: "Własny klient",
+    };
+  }, [customMode, customName, customVat, customAddress, customCountryCode]);
+
+  const platform = customMode ? customPlatform : platformFromList;
 
   const gross = parseFloat(grossStr.replace(",", ".")) || 0;
   const { net, vat } = splitGross(gross, vatRate);
@@ -307,10 +364,23 @@ export function GeneratorWizard() {
               onChange={(e) => setQ(e.target.value)}
               autoComplete="off"
             />
-            <p className="text-xs text-muted-foreground">
-              Znaleziono: {filtered.length} · kliknij pozycję, potem „Dalej”
-            </p>
-            <div className="max-h-[28rem] overflow-auto rounded-lg border border-border bg-card/40 shadow-inner">
+            <div className=”flex items-center justify-between”>
+              <p className=”text-xs text-muted-foreground”>
+                Znaleziono: {filtered.length} · kliknij pozycję, potem „Dalej”
+              </p>
+              <button
+                type=”button”
+                className=”rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20”
+                onClick={() => {
+                  setCustomMode(true);
+                  setPlatformIndex(null);
+                  setCustomErrors([]);
+                }}
+              >
+                + Wpisz klienta ręcznie
+              </button>
+            </div>
+            <div className=”max-h-[28rem] overflow-auto rounded-lg border border-border bg-card/40 shadow-inner”>
               {filtered.map((p) => {
                 const idx = PLATFORMS.indexOf(p);
                 return (
@@ -336,11 +406,77 @@ export function GeneratorWizard() {
                 );
               })}
             </div>
-            <button
+            {customMode && (
+              <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-foreground">Dane klienta (ręcznie)</p>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => { setCustomMode(false); setCustomErrors([]); }}
+                  >
+                    ✕ Anuluj — wróć do listy
+                  </button>
+                </div>
+                {customErrors.length > 0 && (
+                  <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive-foreground">
+                    {customErrors.map((e) => <p key={e}>{e}</p>)}
+                  </div>
+                )}
+                <label className="block">
+                  <span className="text-muted-foreground">Nazwa klienta / firmy *</span>
+                  <input
+                    className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="np. Acme GmbH"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-muted-foreground">Numer VAT klienta *</span>
+                  <input
+                    className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring tracking-widest"
+                    placeholder="np. DE123456789"
+                    value={customVat}
+                    onChange={(e) => setCustomVat(e.target.value.trim())}
+                  />
+                  <span className="text-xs text-muted-foreground">Jeśli klient nie ma numeru VAT, wpisz N/A</span>
+                </label>
+                <label className="block">
+                  <span className="text-muted-foreground">Kraj klienta *</span>
+                  <select
+                    className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={customCountryCode}
+                    onChange={(e) => setCustomCountryCode(e.target.value)}
+                  >
+                    {COUNTRY_CODES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.code})</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-muted-foreground">Adres klienta (opcjonalnie)</span>
+                  <input
+                    className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="np. Musterstraße 1, 10115 Berlin"
+                    value={customAddress}
+                    onChange={(e) => setCustomAddress(e.target.value)}
+                  />
+                </label>
+              </div>
+            )}
+          <button
               type="button"
               className="rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/25 transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
-              disabled={platformIndex === null}
+              disabled={!customMode && platformIndex === null}
               onClick={() => {
+                if (customMode) {
+                  const errs: string[] = [];
+                  if (!customName.trim()) errs.push("Podaj nazwę klienta.");
+                  if (!customVat.trim()) errs.push("Podaj numer VAT klienta (lub wpisz N/A jeśli nie dotyczy).");
+                  if (errs.length) { setCustomErrors(errs); return; }
+                  setCustomErrors([]);
+                }
                 setStepErrors([]);
                 setStep(1);
               }}
