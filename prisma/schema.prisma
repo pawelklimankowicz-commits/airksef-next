@@ -22,6 +22,16 @@ model User {
   stripeSubscriptionId   String?
   stripePriceId          String?
   subscriptionStatus     String?
+  /// Dane sprzedawcy (Podmiot2 w FA(3)) — zapisywane przez użytkownika w ustawieniach
+  sellerNip              String?
+  sellerName             String?
+  sellerAddress          String?
+  sellerCity             String?
+  sellerZip              String?
+  /// Token autoryzacyjny KSeF (zaszyfrowany AES-256-GCM, klucz KSEF_ENCRYPTION_KEY)
+  ksefTokenEncrypted     String?
+  /// Środowisko KSeF: "test" = ksef-test.mf.gov.pl, "prod" = ksef.mf.gov.pl
+  ksefEnvironment        String?   @default("test")
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
   invoices               Invoice[]

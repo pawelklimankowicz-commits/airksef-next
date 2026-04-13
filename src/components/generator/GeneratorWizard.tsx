@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { parseInvoicePdfAction } from "@/actions/parse-pdf";
+import { submitXmlToKsefAction } from "@/actions/ksef-submit";
 import { PLATFORMS } from "@/data/platforms";
 import { CURRENCIES } from "@/data/currencies";
 import { useInvoices } from "@/hooks/useInvoices";
@@ -69,8 +70,11 @@ export function GeneratorWizard() {
   const [q, setQ] = useState("");
   const [platformIndex, setPlatformIndex] = useState<number | null>(null);
   const [customMode, setCustomMode] = useState(false);
+  const [customIsPolish, setCustomIsPolish] = useState(false); // czy klient ma polski NIP
   const [customName, setCustomName] = useState("");
   const [customVat, setCustomVat] = useState("");
+  const [customCity, setCustomCity] = useState("");
+  const [customZip, setCustomZip] = useState("");
   const [customAddress, setCustomAddress] = useState("");
   const [customCountryCode, setCustomCountryCode] = useState("DE");
   const [customErrors, setCustomErrors] = useState<string[]>([]);
@@ -101,6 +105,8 @@ export function GeneratorWizard() {
   const [savedToast, setSavedToast] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pdfNote, setPdfNote] = useState<string | null>(null);
+  const [ksefSending, setKsefSending] = useState(false);
+  const [ksefMsg, setKsefMsg] = useState<{ ok: boolean; text: string; ref?: string; mode?: string } | null>(null);
 
   useEffect(() => {
     const p = loadBuyerProfile();
@@ -128,17 +134,21 @@ export function GeneratorWizard() {
 
   const customPlatform = useMemo(() => {
     if (!customMode) return null;
-    const cc = COUNTRY_CODES.find((c) => c.code === customCountryCode);
+    const effectiveCountry = customIsPolish ? "PL" : customCountryCode;
+    const cc = COUNTRY_CODES.find((c) => c.code === effectiveCountry);
+    const address = customIsPolish
+      ? `${customAddress.trim()}${customCity.trim() ? `, ${customZip.trim()} ${customCity.trim()}` : ""}`.trim()
+      : customAddress.trim();
     return {
       name: customName.trim() || "—",
       vatId: customVat.trim() || "N/A",
-      address: customAddress.trim(),
-      countryCode: customCountryCode,
-      country: cc?.name ?? customCountryCode,
-      flag: cc?.flag ?? "🌍",
+      address,
+      countryCode: effectiveCountry,
+      country: customIsPolish ? "Polska" : (cc?.name ?? effectiveCountry),
+      flag: customIsPolish ? "🇵🇱" : (cc?.flag ?? "🌍"),
       category: "Własny klient",
     };
-  }, [customMode, customName, customVat, customAddress, customCountryCode]);
+  }, [customMode, customIsPolish, customName, customVat, customAddress, customCity, customZip, customCountryCode]);
 
   const platform = customMode ? customPlatform : platformFromList;
 
@@ -235,6 +245,24 @@ export function GeneratorWizard() {
     add(invoice, `${platform?.name ?? ""} — ${invoice.invoiceNumber}`);
     setSavedToast(true);
     window.setTimeout(() => setSavedToast(false), 3500);
+  }
+
+  async function sendToKsef() {
+    if (!xmlOut) return;
+    setKsefSending(true);
+    setKsefMsg(null);
+    try {
+      const r = await submitXmlToKsefAction(xmlOut);
+      if (!r.ok) {
+        setKsefMsg({ ok: false, text: r.error });
+      } else {
+        setKsefMsg({ ok: true, text: r.message, ref: r.reference, mode: r.mode });
+      }
+    } catch {
+      setKsefMsg({ ok: false, text: "Nie udało się wysłać. Sprawdź połączenie i spróbuj ponownie." });
+    } finally {
+      setKsefSending(false);
+    }
   }
 
   function goStep1Next() {
@@ -415,54 +443,118 @@ export function GeneratorWizard() {
                     className="text-xs text-muted-foreground hover:text-foreground"
                     onClick={() => { setCustomMode(false); setCustomErrors([]); }}
                   >
-                    ✕ Anuluj — wróć do listy
+                    x Anuluj
                   </button>
                 </div>
+
+                {/* Przełącznik: polski / zagraniczny */}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                      !customIsPolish
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-accent/50"
+                    }`}
+                    onClick={() => { setCustomIsPolish(false); setCustomErrors([]); }}
+                  >
+                    Zagraniczny
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
+                      customIsPolish
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:bg-accent/50"
+                    }`}
+                    onClick={() => { setCustomIsPolish(true); setCustomErrors([]); }}
+                  >
+                    Polski (NIP PL)
+                  </button>
+                </div>
+
                 {customErrors.length > 0 && (
                   <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive-foreground">
                     {customErrors.map((e) => <p key={e}>{e}</p>)}
                   </div>
                 )}
+
                 <label className="block">
-                  <span className="text-muted-foreground">Nazwa klienta / firmy *</span>
+                  <span className="text-muted-foreground">Nazwa firmy / klienta *</span>
                   <input
                     className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="np. Acme GmbH"
+                    placeholder={customIsPolish ? "np. ABC Sp. z o.o." : "np. Acme GmbH"}
                     value={customName}
                     onChange={(e) => setCustomName(e.target.value)}
                   />
                 </label>
+
                 <label className="block">
-                  <span className="text-muted-foreground">Numer VAT klienta *</span>
+                  <span className="text-muted-foreground">
+                    {customIsPolish ? "NIP klienta (10 cyfr) *" : "Numer VAT klienta *"}
+                  </span>
                   <input
                     className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring tracking-widest"
-                    placeholder="np. DE123456789"
+                    placeholder={customIsPolish ? "np. 5260001546" : "np. DE123456789"}
+                    inputMode={customIsPolish ? "numeric" : "text"}
+                    maxLength={customIsPolish ? 10 : 30}
                     value={customVat}
-                    onChange={(e) => setCustomVat(e.target.value.trim())}
+                    onChange={(e) =>
+                      setCustomVat(customIsPolish ? e.target.value.replace(/\D/g, "").slice(0, 10) : e.target.value.trim())
+                    }
                   />
-                  <span className="text-xs text-muted-foreground">Jeśli klient nie ma numeru VAT, wpisz N/A</span>
+                  {!customIsPolish && (
+                    <span className="text-xs text-muted-foreground">Jesli klient nie ma numeru VAT, wpisz N/A</span>
+                  )}
                 </label>
+
+                {!customIsPolish && (
+                  <label className="block">
+                    <span className="text-muted-foreground">Kraj klienta *</span>
+                    <select
+                      className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={customCountryCode}
+                      onChange={(e) => setCustomCountryCode(e.target.value)}
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.code})</option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+
                 <label className="block">
-                  <span className="text-muted-foreground">Kraj klienta *</span>
-                  <select
-                    className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    value={customCountryCode}
-                    onChange={(e) => setCustomCountryCode(e.target.value)}
-                  >
-                    {COUNTRY_CODES.map((c) => (
-                      <option key={c.code} value={c.code}>{c.flag} {c.name} ({c.code})</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="text-muted-foreground">Adres klienta (opcjonalnie)</span>
+                  <span className="text-muted-foreground">Ulica i numer (opcjonalnie)</span>
                   <input
                     className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="np. Musterstraße 1, 10115 Berlin"
+                    placeholder={customIsPolish ? "np. ul. Marszalkowska 1" : "np. Musterstr. 1, 10115 Berlin"}
                     value={customAddress}
                     onChange={(e) => setCustomAddress(e.target.value)}
                   />
                 </label>
+
+                {customIsPolish && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block">
+                      <span className="text-muted-foreground">Kod pocztowy</span>
+                      <input
+                        className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="00-000"
+                        value={customZip}
+                        onChange={(e) => setCustomZip(e.target.value)}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-muted-foreground">Miasto</span>
+                      <input
+                        className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        placeholder="np. Warszawa"
+                        value={customCity}
+                        onChange={(e) => setCustomCity(e.target.value)}
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
             )}
           <button
@@ -748,6 +840,14 @@ export function GeneratorWizard() {
                   </button>
                   <button
                     type="button"
+                    disabled={ksefSending || (valMsg !== null && valMsg.length > 0)}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                    onClick={() => void sendToKsef()}
+                  >
+                    {ksefSending ? "Wysyłanie do KSeF…" : "Wyślij do KSeF"}
+                  </button>
+                  <button
+                    type="button"
                     className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent/50"
                     onClick={saveToList}
                   >
@@ -760,6 +860,26 @@ export function GeneratorWizard() {
                     Edycja faktury
                   </button>
                 </div>
+                {ksefMsg && (
+                  <div className={`rounded-lg border px-3 py-2 text-sm ${
+                    ksefMsg.ok
+                      ? ksefMsg.mode === "mock"
+                        ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-700 dark:text-yellow-400"
+                        : "border-primary/40 bg-primary/10 text-foreground"
+                      : "border-destructive/40 bg-destructive/10 text-destructive-foreground"
+                  }`}>
+                    {ksefMsg.text}
+                    {ksefMsg.ok && ksefMsg.ref && ksefMsg.mode !== "mock" && (
+                      <p className="mt-1 font-mono text-xs text-muted-foreground">Numer referencyjny: {ksefMsg.ref}</p>
+                    )}
+                    {ksefMsg.ok && ksefMsg.mode === "mock" && (
+                      <p className="mt-1 text-xs">
+                        Aby wysyłać naprawdę, skonfiguruj token KSeF w{" "}
+                        <a href="/ksef" className="underline">ustawieniach KSeF</a>.
+                      </p>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
