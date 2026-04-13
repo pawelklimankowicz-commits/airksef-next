@@ -124,7 +124,10 @@ export default async function DashboardPage() {
               <Unplug className="h-5 w-5 text-muted-foreground group-hover:text-primary" aria-hidden />
             </div>
             <p className="mt-3 text-sm font-medium leading-snug text-foreground">
-              Niepołączony – kliknij aby połączyć
+              Tryb symulacji
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground leading-snug">
+              Kliknij, aby zobaczyć opcje integracji z KSeF
             </p>
             <ChevronRight className="mt-2 ml-auto h-5 w-5 text-muted-foreground transition group-hover:text-primary" />
           </Link>

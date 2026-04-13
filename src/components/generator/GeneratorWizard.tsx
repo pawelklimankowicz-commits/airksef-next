@@ -19,7 +19,7 @@ import { validateInvoiceXml } from "@/lib/validateInvoiceXml";
 import { splitGross } from "@/lib/vatMath";
 import type { InvoiceInput, VatRate } from "@/types/invoice";
 
-const STEPS = ["Platforma", "Faktura", "Nabywca", "XML"] as const;
+const STEPS = ["Klient", "Faktura", "Sprzedawca", "XML"] as const;
 
 const VAT_RATES: VatRate[] = ["23%", "8%", "5%", "0%", "ZW", "NP"];
 
@@ -43,6 +43,7 @@ export function GeneratorWizard() {
   const [invoiceNumber, setInvoiceNumber] = useState(`AIRKSEF/${todayISODate().replace(/-/g, "/")}/001`);
   const [isCorrection, setIsCorrection] = useState(false);
   const [origNr, setOrigNr] = useState("");
+  const [origIssueDate, setOrigIssueDate] = useState("");
   const [origKsef, setOrigKsef] = useState("");
   const [corrReason, setCorrReason] = useState("");
 
@@ -54,6 +55,7 @@ export function GeneratorWizard() {
 
   const [xmlOut, setXmlOut] = useState("");
   const [valMsg, setValMsg] = useState<string[] | null>(null);
+  const [valWarnings, setValWarnings] = useState<string[]>([]);
   const [stepErrors, setStepErrors] = useState<string[]>([]);
   const [savedToast, setSavedToast] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
@@ -112,6 +114,7 @@ export function GeneratorWizard() {
       exchangeRate: currency !== "PLN" ? exRate : undefined,
       isCorrection: isCorrection || undefined,
       originalInvoiceNumber: isCorrection ? origNr.trim() : undefined,
+      originalIssueDate: isCorrection && origIssueDate.trim() ? origIssueDate.trim() : undefined,
       originalKsefNumber: isCorrection ? origKsef.trim() : undefined,
       correctionReason: isCorrection ? corrReason.trim() : undefined,
     };
@@ -133,6 +136,7 @@ export function GeneratorWizard() {
     exRate,
     isCorrection,
     origNr,
+    origIssueDate,
     origKsef,
     corrReason,
   ]);
@@ -143,6 +147,7 @@ export function GeneratorWizard() {
     setXmlOut(xml);
     const v = validateInvoiceXml(xml);
     setValMsg(v.valid ? [] : v.errors);
+    setValWarnings(v.warnings ?? []);
   }, [invoice]);
 
   function downloadXml() {
@@ -249,8 +254,7 @@ export function GeneratorWizard() {
         <div className="mb-8">
           <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">Generator XML FA (3) — KSeF</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Wybierz platformę zagraniczną, uzupełnij kwoty i dane nabywcy (Polska), pobierz plik XML do dalszej obsługi w
-            biurze rachunkowym lub imporcie.
+            Wybierz zagranicznego klienta lub platformę, której wystawiasz fakturę. Uzupełnij kwoty i swoje dane jako sprzedawca (Podmiot2 w KSeF). Pobierz plik XML FA(3) gotowy do wysłania do KSeF.
           </p>
         </div>
 
@@ -285,8 +289,8 @@ export function GeneratorWizard() {
           <div className="space-y-4">
             <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
               <p className="text-muted-foreground">
-                <strong className="text-foreground">PDF</strong> — wgraj fakturę z warstwą tekstową (nie skan); pola
-                nabywcy / kwoty uzupełnią się heurystycznie.
+                <strong className="text-foreground">PDF</strong> — wgraj fakturę od klienta z warstwą tekstową (nie skan); pola
+                kwot i dat uzupełnią się heurystycznie.
               </p>
               <label className="mt-2 inline-block">
                 <span className="cursor-pointer rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/20">
@@ -298,7 +302,7 @@ export function GeneratorWizard() {
             </div>
             <input
               className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="Szukaj platformy (nazwa, kategoria, kraj)…"
+              placeholder="Szukaj klienta / platformy (nazwa, kategoria, kraj)…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
               autoComplete="off"
@@ -323,6 +327,9 @@ export function GeneratorWizard() {
                       <span className="font-medium text-card-foreground">{p.name}</span>
                       <span className="mt-0.5 block text-xs text-muted-foreground">
                         {p.category} · {p.country} · VAT: {p.vatId}
+                        {p.vatId === "N/A" && (
+                          <span className="ml-1 text-yellow-600 dark:text-yellow-400" title="Brak numeru VAT — XML może być niezgodny z KSeF">⚠</span>
+                        )}
                       </span>
                     </span>
                   </button>
@@ -346,8 +353,13 @@ export function GeneratorWizard() {
         {step === 1 && platform && (
           <div className="space-y-3 text-sm">
             <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-muted-foreground">
-              Dostawca: <span className="text-foreground">{platform.name}</span> ({platform.countryCode})
+              Klient / nabywca (Podmiot1): <span className="text-foreground">{platform.name}</span> ({platform.countryCode})
             </p>
+            {platform.vatId === "N/A" && (
+              <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-sm text-yellow-700 dark:text-yellow-400">
+                <strong>Uwaga:</strong> Ten klient ({platform.name}) nie posiada zarejestrowanego numeru VAT/NIP w naszej bazie (wartość &quot;N/A&quot;). Wygenerowany XML FA może zostać odrzucony przez system KSeF. Zweryfikuj numer VAT klienta samodzielnie i w razie potrzeby wprowadź go ręcznie.
+              </div>
+            )}
             <label className="block">
               <span className="text-muted-foreground">Kwota brutto</span>
               <input
@@ -419,7 +431,7 @@ export function GeneratorWizard() {
               />
             </label>
             <label className="block">
-              <span className="text-muted-foreground">Numer faktury (wg dokumentu od platformy)</span>
+              <span className="text-muted-foreground">Numer faktury (nadajesz sam jako sprzedawca)</span>
               <input
                 className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 value={invoiceNumber}
@@ -443,6 +455,17 @@ export function GeneratorWizard() {
                   value={origNr}
                   onChange={(e) => setOrigNr(e.target.value)}
                 />
+                <label className="block">
+                  <span className="text-xs text-muted-foreground">
+                    Data wystawienia faktury korygowanej * (wymagana przez KSeF)
+                  </span>
+                  <input
+                    type="date"
+                    className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={origIssueDate}
+                    onChange={(e) => setOrigIssueDate(e.target.value)}
+                  />
+                </label>
                 <input
                   className="w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Numer KSeF faktury korygowanej (opcjonalnie)"
@@ -470,8 +493,11 @@ export function GeneratorWizard() {
 
         {step === 2 && platform && (
           <div className="space-y-3 text-sm">
+            <div className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-xs text-muted-foreground">
+              <strong className="text-foreground">Twoje dane sprzedawcy</strong> — trafią do sekcji <strong>Podmiot2</strong> w pliku XML (KSeF). Możesz je zapamiętać i zostaną uzupełnione automatycznie przy następnej fakturze.
+            </div>
             <label className="block">
-              <span className="text-muted-foreground">NIP nabywcy (10 cyfr)</span>
+              <span className="text-muted-foreground">Twój NIP (10 cyfr) — sprzedawca</span>
               <input
                 className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring tracking-widest"
                 inputMode="numeric"
@@ -483,7 +509,7 @@ export function GeneratorWizard() {
               />
             </label>
             <label className="block">
-              <span className="text-muted-foreground">Nazwa lub imię i nazwisko</span>
+              <span className="text-muted-foreground">Twoja nazwa firmy lub imię i nazwisko</span>
               <input
                 className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 value={buyerName}
@@ -491,7 +517,7 @@ export function GeneratorWizard() {
               />
             </label>
             <label className="block">
-              <span className="text-muted-foreground">Ulica i numer</span>
+              <span className="text-muted-foreground">Ulica i numer (adres sprzedawcy)</span>
               <input
                 className="mt-1 w-full rounded border border-input bg-card px-2 py-2 text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 value={buyerAddress}
@@ -522,7 +548,7 @@ export function GeneratorWizard() {
                 Wstecz
               </button>
               <button type="button" className="rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground hover:bg-primary/90" onClick={goStep2Next}>
-                Generuj podgląd XML
+                Generuj XML FA(3)
               </button>
             </div>
           </div>
@@ -546,8 +572,8 @@ export function GeneratorWizard() {
               <span className="text-xs text-muted-foreground">XML przelicza się przy zmianie danych w poprzednich krokach.</span>
             </div>
             {valMsg && valMsg.length > 0 && (
-              <div className="rounded-lg border border-primary/30 bg-muted/50 p-3 text-sm text-foreground">
-                <p className="font-medium">Uwagi walidacji (sprawdź przed wysłaniem do KSeF):</p>
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive-foreground">
+                <p className="font-medium">Błędy struktury XML — plik może zostać odrzucony przez KSeF:</p>
                 <ul className="mt-2 list-inside list-disc space-y-0.5">
                   {valMsg.map((e) => (
                     <li key={e}>{e}</li>
@@ -555,8 +581,18 @@ export function GeneratorWizard() {
                 </ul>
               </div>
             )}
+            {valWarnings.length > 0 && (
+              <div className="rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-3 text-sm text-foreground">
+                <p className="font-medium text-yellow-700 dark:text-yellow-400">Ostrzeżenia — sprawdź przed wysłaniem:</p>
+                <ul className="mt-2 list-inside list-disc space-y-0.5 text-muted-foreground">
+                  {valWarnings.map((w) => (
+                    <li key={w}>{w}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {valMsg && valMsg.length === 0 && xmlOut && (
-              <p className="text-sm text-primary">Podstawowa walidacja struktury XML zakończona pomyślnie.</p>
+              <p className="text-sm text-primary">✓ Walidacja struktury XML zakończona pomyślnie.</p>
             )}
             {xmlOut && (
               <>
@@ -582,7 +618,7 @@ export function GeneratorWizard() {
                     Zapisz na liście
                   </button>
                   <button type="button" className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent/50" onClick={() => setStep(2)}>
-                    Wstecz — edycja nabywcy
+                    Wstecz — edycja sprzedawcy
                   </button>
                   <button type="button" className="rounded-lg border border-border px-4 py-2 text-sm hover:bg-accent/50" onClick={() => setStep(1)}>
                     Edycja faktury

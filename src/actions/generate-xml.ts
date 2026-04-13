@@ -12,11 +12,11 @@ import type { InvoiceInput } from "@/types/invoice";
 export async function previewInvoiceValidationAction(input: InvoiceInput) {
   const xml = buildInvoiceXml(input);
   const v = validateInvoiceXml(xml);
-  return { valid: v.valid, errors: v.errors };
+  return { valid: v.valid, errors: v.errors, warnings: v.warnings };
 }
 
 export type GenerateXmlResult =
-  | { ok: true; xml: string; errors: string[] }
+  | { ok: true; xml: string; errors: string[]; warnings: string[] }
   | { ok: false; reason: "UNAUTHORIZED" };
 
 /**
@@ -29,5 +29,5 @@ export async function generateInvoiceXmlAction(input: InvoiceInput): Promise<Gen
   }
   const xml = buildInvoiceXml(input);
   const v = validateInvoiceXml(xml);
-  return { ok: true, xml, errors: v.errors };
+  return { ok: true, xml, errors: v.errors, warnings: v.warnings };
 }

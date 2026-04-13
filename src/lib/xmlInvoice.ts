@@ -16,7 +16,14 @@ function fmtAmount(n: number): string {
 
 /**
  * Buduje XML faktury FA (3) zgodny z namespace wzoru CRD.
- * Poprawka względem pierwotnego bundla: poprawna nazwa pola daty faktury korygowanej (schema KSeF).
+ *
+ * Struktura podmiotów (zgodna z KSeF dla polskiego sprzedawcy usług do zagranicznego klienta):
+ *   Podmiot1 = NABYWCA (zagraniczny klient) → n.supplierVat / n.supplierName / n.supplierCountryCode
+ *   Podmiot2 = SPRZEDAWCA (polska firma / freelancer) → n.buyerNip / n.buyerName / KodKraju PL
+ *
+ * Uwaga historyczna: pola `buyer*` przechowują dane polskiego sprzedawcy,
+ * a pola `supplier*` — dane zagranicznego nabywcy (klienta). Nazewnictwo
+ * odzwierciedla poprzedni model aplikacji i będzie zunifikowane w kolejnej wersji.
  */
 export function buildInvoiceXml(n: InvoiceInput): string {
   const dataWytworzenia = new Date().toISOString().replace(/\.\d{3}Z$/, "");
@@ -47,7 +54,7 @@ export function buildInvoiceXml(n: InvoiceInput): string {
     n.isCorrection && n.originalInvoiceNumber
       ? `
     <DaneFaKorygowanej>
-      <DataWystFaKorygowanej>${escapeXml(n.issueDate)}</DataWystFaKorygowanej>
+      <DataWystFaKorygowanej>${escapeXml(n.originalIssueDate ?? n.issueDate)}</DataWystFaKorygowanej>
       <NrFaKorygowanej>${escapeXml(n.originalInvoiceNumber)}</NrFaKorygowanej>${n.originalKsefNumber ? `
       <NrKSeF>${escapeXml(n.originalKsefNumber)}</NrKSeF>` : ""}
     </DaneFaKorygowanej>`
@@ -75,6 +82,16 @@ export function buildInvoiceXml(n: InvoiceInput): string {
   </Naglowek>
   <Podmiot1>
     <DaneIdentyfikacyjne>
+      <NIP>${escapeXml(n.supplierVat)}</NIP>
+      <Nazwa>${escapeXml(n.supplierName)}</Nazwa>
+    </DaneIdentyfikacyjne>
+    <Adres>
+      <KodKraju>${escapeXml(n.supplierCountryCode)}</KodKraju>
+      <AdresL1>${escapeXml(n.supplierAddress)}</AdresL1>
+    </Adres>
+  </Podmiot1>
+  <Podmiot2>
+    <DaneIdentyfikacyjne>
       <NIP>${escapeXml(n.buyerNip)}</NIP>
       <Nazwa>${escapeXml(n.buyerName)}</Nazwa>
     </DaneIdentyfikacyjne>
@@ -82,16 +99,6 @@ export function buildInvoiceXml(n: InvoiceInput): string {
       <KodKraju>PL</KodKraju>
       <AdresL1>${escapeXml(n.buyerAddress)}</AdresL1>
       <AdresL2>${escapeXml(n.buyerCity)} ${escapeXml(n.buyerZip)}</AdresL2>
-    </Adres>
-  </Podmiot1>
-  <Podmiot2>
-    <DaneIdentyfikacyjne>
-      <NIP>${escapeXml(n.supplierVat)}</NIP>
-      <Nazwa>${escapeXml(n.supplierName)}</Nazwa>
-    </DaneIdentyfikacyjne>
-    <Adres>
-      <KodKraju>${escapeXml(n.supplierCountryCode)}</KodKraju>
-      <AdresL1>${escapeXml(n.supplierAddress)}</AdresL1>
     </Adres>
   </Podmiot2>
   <Fa>${rodzajKor}

@@ -21,6 +21,8 @@ export interface InvoiceInput {
   exchangeRate?: number;
   isCorrection?: boolean;
   originalInvoiceNumber?: string;
+  /** Data wystawienia faktury korygowanej (YYYY-MM-DD). Wymagana przez KSeF w DaneFaKorygowanej. */
+  originalIssueDate?: string;
   originalKsefNumber?: string;
   correctionReason?: string;
 }

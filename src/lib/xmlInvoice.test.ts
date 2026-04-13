@@ -8,7 +8,7 @@ import { validateInvoiceXml } from "./validateInvoiceXml";
 
 function baseInvoice(overrides: Partial<InvoiceInput> = {}): InvoiceInput {
   return {
-    buyerNip: "5260250994",
+    buyerNip: "5260250995", // suma kontrolna: 225 % 11 = 5 ✓
     buyerName: "Test Sp. z o.o.",
     buyerAddress: "ul. Testowa 1",
     buyerCity: "Warszawa",
@@ -42,8 +42,10 @@ describe("buildInvoiceXml", () => {
     const xml = buildInvoiceXml(baseInvoice());
     expect(xml).toContain('kodSystemowy="FA (3)"');
     expect(xml).toContain("<KodFormularza");
-    expect(xml).toContain("<NIP>5260250994</NIP>");
+    // Podmiot1 = zagraniczny nabywca (klient)
     expect(xml).toContain("<NIP>NL852071839B01</NIP>");
+    // Podmiot2 = polski sprzedawca
+    expect(xml).toContain("<NIP>5260250995</NIP>");
     expect(xml).toContain("<P_13_1>100.00</P_13_1>");
     expect(xml).toContain("<P_14_1>23.00</P_14_1>");
     expect(xml).toContain("<P_15>123.00</P_15>");
@@ -87,33 +89,69 @@ describe("buildInvoiceXml", () => {
     }
   });
 
-  it("faktura korygująca zawiera KOR i DaneFaKorygowanej", () => {
+  it("faktura korygująca zawiera KOR i DaneFaKorygowanej z datą oryginału", () => {
     const xml = buildInvoiceXml(
       baseInvoice({
         isCorrection: true,
         originalInvoiceNumber: "FV/OLD/1",
+        originalIssueDate: "2026-01-15",
         originalKsefNumber: "KSEF-123",
         correctionReason: "Pomyłka kwoty",
       })
     );
     expect(xml).toContain("<RodzajFaktury>KOR</RodzajFaktury>");
+    expect(xml).toContain("<DataWystFaKorygowanej>2026-01-15</DataWystFaKorygowanej>");
     expect(xml).toContain("<NrFaKorygowanej>FV/OLD/1</NrFaKorygowanej>");
     expect(xml).toContain("<NrKSeF>KSEF-123</NrKSeF>");
     expect(xml).toContain("<P_15Z>Pomyłka kwoty</P_15Z>");
   });
+
+  it("faktura korygująca bez originalIssueDate używa issueDate jako fallback", () => {
+    const xml = buildInvoiceXml(
+      baseInvoice({
+        isCorrection: true,
+        originalInvoiceNumber: "FV/OLD/2",
+        issueDate: "2026-04-07",
+        // brak originalIssueDate — powinien użyć issueDate jako fallback
+      })
+    );
+    expect(xml).toContain("<DataWystFaKorygowanej>2026-04-07</DataWystFaKorygowanej>");
+  });
 });
 
 describe("buildInvoiceXml + validateInvoiceXml", () => {
-  it("wygenerowany XML przechodzi walidację heurystyczną", () => {
+  it("wygenerowany XML przechodzi walidację strukturalną (brak błędów)", () => {
     const xml = buildInvoiceXml(baseInvoice());
     const v = validateInvoiceXml(xml);
     expect(v.valid).toBe(true);
     expect(v.errors).toEqual([]);
+    // warnings są dozwolone (np. brak kursu NBP dla EUR)
+    expect(Array.isArray(v.warnings)).toBe(true);
+  });
+
+  it("XML z kursem waluty nie generuje ostrzeżenia o kursie", () => {
+    const xml = buildInvoiceXml(baseInvoice({ currency: "EUR", exchangeRate: 4.25 }));
+    const v = validateInvoiceXml(xml);
+    expect(v.valid).toBe(true);
+    expect(v.warnings.some((w) => w.includes("KursWalutyZ"))).toBe(false);
   });
 
   it("wykrywa uszkodzony XML", () => {
     const v = validateInvoiceXml("<broken/>");
     expect(v.valid).toBe(false);
     expect(v.errors.length).toBeGreaterThan(0);
+  });
+
+  it("wykrywa błędną sumę kontrolną NIP sprzedawcy (Podmiot2)", () => {
+    // NIP z błędną cyfrą kontrolną (prawidłowa to 5, podajemy 0)
+    const xml = buildInvoiceXml(baseInvoice({ buyerNip: "5260250990" }));
+    const v = validateInvoiceXml(xml);
+    expect(v.errors.some((e) => e.includes("suma kontrolna"))).toBe(true);
+  });
+
+  it("wykrywa ostrzeżenie dla waluty obcej bez kursu", () => {
+    const xml = buildInvoiceXml(baseInvoice({ currency: "USD", exchangeRate: undefined }));
+    const v = validateInvoiceXml(xml);
+    expect(v.warnings.some((w) => w.includes("KursWalutyZ"))).toBe(true);
   });
 });

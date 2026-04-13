@@ -40,11 +40,22 @@ export async function POST(req: Request) {
         const subId = typeof session.subscription === "string" ? session.subscription : null;
 
         if (clerkId && customerId && planMeta && (planMeta === Plan.PRO || planMeta === Plan.BUSINESS)) {
+          // Pobierz priceId z subskrypcji, jeśli subId jest dostępne
+          let priceId: string | null = null;
+          if (subId && stripe) {
+            try {
+              const sub = await stripe.subscriptions.retrieve(subId);
+              priceId = sub.items.data[0]?.price?.id ?? null;
+            } catch {
+              // nie blokuj zapisu planu gdy nie uda się pobrać priceId
+            }
+          }
           await prisma.user.updateMany({
             where: { clerkId },
             data: {
               stripeCustomerId: customerId,
               stripeSubscriptionId: subId,
+              stripePriceId: priceId,
               plan: planMeta,
               subscriptionStatus: "active",
             },
@@ -64,6 +75,7 @@ export async function POST(req: Request) {
             where: { clerkId },
             data: {
               stripeSubscriptionId: sub.id,
+              stripePriceId: priceId ?? null,
               plan: status === "active" ? plan : Plan.FREE,
               subscriptionStatus: status,
             },
@@ -79,6 +91,7 @@ export async function POST(req: Request) {
             where: { clerkId },
             data: {
               stripeSubscriptionId: null,
+              stripePriceId: null,
               plan: Plan.FREE,
               subscriptionStatus: "canceled",
             },
