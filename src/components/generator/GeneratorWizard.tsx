@@ -274,7 +274,7 @@ export function GeneratorWizard() {
     if (h.saleDate) setSaleDate(h.saleDate);
     if (h.invoiceNumber) setInvoiceNumber(h.invoiceNumber);
     setPdfNote(
-      `PDF: ${r.pages} str., wykryto podpowiedzi pól — sprawdź kwoty i daty przed „Dalej”.`,
+      `PDF: ${r.pages} str., wykryto podpowiedzi pól — sprawdź kwoty i daty przed "Dalej".`,
     );
   }
 
@@ -364,13 +364,13 @@ export function GeneratorWizard() {
               onChange={(e) => setQ(e.target.value)}
               autoComplete="off"
             />
-            <div className=”flex items-center justify-between”>
-              <p className=”text-xs text-muted-foreground”>
-                Znaleziono: {filtered.length} · kliknij pozycję, potem „Dalej”
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                Znaleziono: {filtered.length} · kliknij pozycję, potem "Dalej"
               </p>
               <button
-                type=”button”
-                className=”rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20”
+                type="button"
+                className="rounded-lg border border-primary/50 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20"
                 onClick={() => {
                   setCustomMode(true);
                   setPlatformIndex(null);
@@ -380,7 +380,7 @@ export function GeneratorWizard() {
                 + Wpisz klienta ręcznie
               </button>
             </div>
-            <div className=”max-h-[28rem] overflow-auto rounded-lg border border-border bg-card/40 shadow-inner”>
+            <div className="max-h-[28rem] overflow-auto rounded-lg border border-border bg-card/40 shadow-inner">
               {filtered.map((p) => {
                 const idx = PLATFORMS.indexOf(p);
                 return (
@@ -694,7 +694,7 @@ export function GeneratorWizard() {
           <div className="space-y-4">
             {savedToast && (
               <div className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-foreground">
-                Zapisano na liście faktur — możesz wyeksportować CSV w zakładce „Zapisane faktury”.
+                Zapisano na liście faktur — możesz wyeksportować CSV w zakładce "Zapisane faktury".
               </div>
             )}
             <div className="flex flex-wrap items-center gap-2">
