@@ -6,17 +6,17 @@ export function LandingCalculator() {
   const [n, setN] = useState(10);
 
   const stats = useMemo(() => {
-    const timeWithoutMin = n * 5;
-    const timeWithSec = n * 1;
-    const timeSavedMin = Math.max(0, Math.round(timeWithoutMin - timeWithSec / 60));
-    const accountantLow = n * 5;
-    const accountantHigh = n * 10;
+    const timeWithoutMin = n * 20; // ~20 min ręcznie (wypełnienie XML, weryfikacja schematu, upload do KSeF)
+    const timeWithMin = n * 2;    // ~2 min z AIRKSEF (wybór klienta, kwota, pobierz XML)
+    const timeSavedMin = Math.max(0, timeWithoutMin - timeWithMin);
+    const accountantLow = n * 10;
+    const accountantHigh = n * 20;
     const savingsLow = Math.max(0, accountantLow - 49);
     const savingsHigh = Math.max(0, accountantHigh - 49);
     const yearlySavings = savingsHigh * 12;
     return {
       timeWithoutMin,
-      timeWithSec,
+      timeWithMin,
       timeSavedMin,
       accountantLow,
       accountantHigh,
@@ -33,7 +33,7 @@ export function LandingCalculator() {
         <h2 className="mt-2 text-center text-2xl font-bold text-white sm:text-3xl">Ile oszczędzasz z AIRKSEF?</h2>
 
         <div className="mt-10 rounded-2xl border border-white/15 bg-white/10 p-6 backdrop-blur-sm sm:p-8">
-          <p className="text-center text-sm text-white/90">Ile faktur zagranicznych dostajesz miesięcznie?</p>
+          <p className="text-center text-sm text-white/90">Ile faktur wystawiasz zagranicznym klientom miesięcznie?</p>
           <div className="mt-6 px-2">
             <input
               type="range"
@@ -54,12 +54,12 @@ export function LandingCalculator() {
             <div className="rounded-xl border border-white/10 bg-white/10 p-4 text-center backdrop-blur-sm">
               <p className="text-xs text-white/80">Czas bez AIRKSEF</p>
               <p className="mt-1 text-xl font-bold text-white">{stats.timeWithoutMin} min/mc</p>
-              <p className="mt-1 text-xs text-white/60">~5 min na fakturę ręcznie</p>
+              <p className="mt-1 text-xs text-white/60">~20 min na fakturę ręcznie (XML + upload KSeF)</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/10 p-4 text-center backdrop-blur-sm">
               <p className="text-xs text-white/80">Czas z AIRKSEF</p>
-              <p className="mt-1 text-xl font-bold text-white">{stats.timeWithSec} sek/mc</p>
-              <p className="mt-1 text-xs text-white/60">~1 sek na fakturę (AI OCR)</p>
+              <p className="mt-1 text-xl font-bold text-white">{stats.timeWithMin} min/mc</p>
+              <p className="mt-1 text-xs text-white/60">~2 min na fakturę (generator XML)</p>
             </div>
             <div className="rounded-xl border border-emerald-300/40 bg-emerald-500/20 p-4 text-center backdrop-blur-sm">
               <p className="text-xs text-emerald-100">Oszczędność czasu</p>
@@ -74,7 +74,7 @@ export function LandingCalculator() {
               <p className="mt-1 text-xl font-bold text-white">
                 {stats.accountantLow}–{stats.accountantHigh} PLN/mc
               </p>
-              <p className="mt-1 text-xs text-white/60">5–10 PLN za dokument</p>
+              <p className="mt-1 text-xs text-white/60">10–20 PLN za fakturę u księgowego</p>
             </div>
             <div className="rounded-xl border border-white/10 bg-white/10 p-4 text-center backdrop-blur-sm">
               <p className="text-xs text-white/80">Koszt AIRKSEF</p>

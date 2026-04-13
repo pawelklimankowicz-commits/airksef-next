@@ -7,23 +7,23 @@ import { LandingCalculator } from "./landing-calculator";
 /** Wymiary PNG po obcięciu prawego dolnego rogu (znak wodny) — muszą zgadzać się z plikiem `public/logo-airksef.png`. */
 const LOGO_INTRINSIC = { w: 885, h: 462 } as const;
 
-const PLATFORMS = ["Uber", "Airbnb", "Bolt", "Booking", "Upwork", "Fiverr", "Netflix", "AWS", "+1000 więcej"];
+const PLATFORMS = ["Upwork", "Fiverr", "Toptal", "Amazon", "Google", "Meta", "Microsoft", "Booking", "Airbnb", "+1000 więcej"];
 
 const FEATURES = [
   {
     icon: FileText,
     title: "PDF → pola",
-    text: "Wgraj PDF z warstwą tekstową — heurystyczne podpowiedzi NIP, kwot i dat. Skany wymagają osobnego OCR.",
+    text: "Wgraj fakturę od klienta z warstwą tekstową — heurystyczne podpowiedzi kwot i dat. Skany wymagają osobnego OCR.",
   },
   {
     icon: Globe,
-    title: "1000+ platform",
-    text: "Uber, Airbnb, Bolt, Booking, Upwork, Steam, Netflix i ponad 1000 innych. Gotowe dane sprzedawców z NIP i adresem.",
+    title: "1000+ klientów",
+    text: "Upwork, Fiverr, Toptal, Amazon, Google, Booking i ponad 1000 innych zagranicznych firm. Gotowe dane nabywców (Podmiot1) z NIP/VAT.",
   },
   {
     icon: Code2,
-    title: "XML JPK_FA(3)",
-    text: "Generowanie pliku zgodnego ze schematem Ministerstwa Finansów. Gotowy do importu w KSeF.",
+    title: "XML FA(3) — KSeF",
+    text: "Generowanie pliku zgodnego ze schematem MF. Podmiot2 = Ty (sprzedawca PL), Podmiot1 = zagraniczny klient. Gotowy do wysyłki do KSeF.",
   },
   {
     icon: Send,
@@ -98,11 +98,10 @@ export function LandingPage() {
           </div>
 
           <h1 className="text-balance text-3xl font-bold leading-tight sm:text-4xl md:text-5xl">
-            Faktury zagraniczne? Przygotuj plik XML pod KSeF
+            Wystawiasz faktury zagranicznym klientom? Generuj XML FA(3) pod KSeF
           </h1>
           <p className="mt-6 max-w-2xl text-pretty text-base text-white/95 sm:text-lg">
-            Dostajesz faktury od Uber, Airbnb, Bolt czy Booking? Wprowadź dane lub wgraj PDF z warstwą tekstową — wygenerujesz
-            plik FA (3) do dalszej weryfikacji i wysyłki do urzędu. Ty odpowiadasz za poprawność danych i zgodność z przepisami.
+            Pracujesz dla Upwork, Fiverr, Booking lub bezpośrednio dla zagranicznej firmy? Od 2026 r. każda faktura wystawiona przez polskiego podatnika VAT musi trafić do KSeF. Wprowadź dane lub wgraj PDF — wygenerujesz plik FA(3) ze swoimi danymi jako Podmiot2 (sprzedawca) i zagranicznym klientem jako Podmiot1 (nabywca). Ty odpowiadasz za poprawność danych i zgodność z przepisami.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -138,7 +137,7 @@ export function LandingPage() {
       <section id="funkcje" className="border-t border-white/10 px-4 py-20">
         <div className="mx-auto max-w-7xl">
           <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-white/80">Funkcje</p>
-          <h2 className="mt-2 text-center text-2xl font-bold sm:text-3xl">Narzędzia pod przygotowanie pliku do KSeF</h2>
+          <h2 className="mt-2 text-center text-2xl font-bold sm:text-3xl">Narzędzia dla polskich sprzedawców usług zagranicznych</h2>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div
