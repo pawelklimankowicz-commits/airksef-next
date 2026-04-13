@@ -33,11 +33,11 @@ export function validateStep1(params: {
 
 export function validateStep2(params: BuyerProfile): string[] {
   const e: string[] = [];
-  if (!isValidNip10(params.buyerNip)) e.push("NIP nabywcy musi mieć dokładnie 10 cyfr.");
-  if (!params.buyerName.trim()) e.push("Podaj nazwę lub imię i nazwisko nabywcy.");
-  if (!params.buyerAddress.trim()) e.push("Podaj ulicę i numer.");
-  if (!params.buyerCity.trim()) e.push("Podaj miasto.");
-  if (!params.buyerZip.trim()) e.push("Podaj kod pocztowy.");
+  if (!isValidNip10(params.buyerNip)) e.push("Twój NIP (sprzedawca) musi mieć dokładnie 10 cyfr.");
+  if (!params.buyerName.trim()) e.push("Podaj swoją nazwę firmy lub imię i nazwisko.");
+  if (!params.buyerAddress.trim()) e.push("Podaj ulicę i numer (adres sprzedawcy).");
+  if (!params.buyerCity.trim()) e.push("Podaj miasto (adres sprzedawcy).");
+  if (!params.buyerZip.trim()) e.push("Podaj kod pocztowy (adres sprzedawcy).");
   return e;
 }
 
